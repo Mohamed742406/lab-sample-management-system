@@ -1,6 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+// القيم الثابتة مؤقتاً حتى تعمل المتغيرات
+const supabaseUrl = 'https://oijokeakpcfjno.supabase.co';
+const supabaseAnonKey = 'sb_publishable_7hEQY5ayJRxpb1kbuJeagQ_faet17k6';
+
+// تحذير للتطوير
+console.log('🔗 Supabase URL:', supabaseUrl);
+console.log('🔑 Using anon key:', supabaseAnonKey ? '✅ Key loaded' : '❌ Key missing');
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
