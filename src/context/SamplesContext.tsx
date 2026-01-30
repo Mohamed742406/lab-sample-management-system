@@ -14,6 +14,7 @@ const STORAGE_KEY = 'lab_samples_data';
 
 export function SamplesProvider({ children }: { children: ReactNode }) {
   const [samples, setSamples] = useState<Sample[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
@@ -23,6 +24,7 @@ export function SamplesProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
   }, [samples]);
 
@@ -35,7 +37,7 @@ export function SamplesProvider({ children }: { children: ReactNode }) {
   };
 
   const updateSample = (id: string, sample: Sample) => {
-    setSamples(prev => prev.map(s => s.id === id ? sample : s));
+    setSamples(prev => prev.map(s => (s.id === id ? sample : s)));
   };
 
   return (
