@@ -1,6 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Sample } from '../types';
+
+// تعريف شكل العينة جوه الكود عشان ميعتمدش على ملفات خارجية
+interface Sample {
+  id?: string;
+  type: string;
+  contractor: string;
+  technician: string;
+  date: string;
+  created_at?: string;
+}
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -10,7 +19,6 @@ interface SamplesContextType {
   samples: Sample[];
   addSample: (sample: Sample) => Promise<void>;
   deleteSample: (id: string) => Promise<void>;
-  updateSample: (id: string, sample: Sample) => Promise<void>;
 }
 
 const SamplesContext = createContext<SamplesContextType | undefined>(undefined);
@@ -29,18 +37,22 @@ export function SamplesProvider({ children }: { children: ReactNode }) {
         setSamples(data as Sample[]);
       }
     };
-
     fetchSamples();
   }, []);
 
   const addSample = async (sample: Sample) => {
+    // بنشيل الـ id والوقت لو موجودين عشان السيرفر هو اللي يعملهم
+    const { id, created_at, ...sampleData } = sample;
+    
     const { data, error } = await supabase
       .from('samples')
-      .insert([sample])
+      .insert([sampleData])
       .select();
 
     if (!error && data) {
       setSamples(prev => [data[0] as Sample, ...prev]);
+    } else if (error) {
+      console.error('Error adding sample:', error.message);
     }
   };
 
@@ -55,20 +67,8 @@ export function SamplesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateSample = async (id: string, sample: Sample) => {
-    const { data, error } = await supabase
-      .from('samples')
-      .update(sample)
-      .eq('id', id)
-      .select();
-
-    if (!error && data) {
-      setSamples(prev => prev.map(s => s.id === id ? data[0] as Sample : s));
-    }
-  };
-
   return (
-    <SamplesContext.Provider value={{ samples, addSample, deleteSample, updateSample }}>
+    <SamplesContext.Provider value={{ samples, addSample, deleteSample }}>
       {children}
     </SamplesContext.Provider>
   );
