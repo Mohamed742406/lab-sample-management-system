@@ -1,41 +1,70 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { Sample } from '../types';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface SamplesContextType {
   samples: Sample[];
-  addSample: (sample: Sample) => void;
-  deleteSample: (id: string) => void;
-  updateSample: (id: string, sample: Sample) => void;
+  addSample: (sample: Sample) => Promise<void>;
+  deleteSample: (id: string) => Promise<void>;
+  updateSample: (id: string, sample: Sample) => Promise<void>;
 }
 
 const SamplesContext = createContext<SamplesContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'lab_samples_data';
-
 export function SamplesProvider({ children }: { children: ReactNode }) {
-  const [samples, setSamples] = useState<Sample[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [samples, setSamples] = useState<Sample[]>([]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
-  }, [samples]);
+    const fetchSamples = async () => {
+      const { data, error } = await supabase
+        .from('samples')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        setSamples(data as Sample[]);
+      }
+    };
 
-  const addSample = (sample: Sample) => {
-    setSamples(prev => [...prev, sample]);
+    fetchSamples();
+  }, []);
+
+  const addSample = async (sample: Sample) => {
+    const { data, error } = await supabase
+      .from('samples')
+      .insert([sample])
+      .select();
+
+    if (!error && data) {
+      setSamples(prev => [data[0] as Sample, ...prev]);
+    }
   };
 
-  const deleteSample = (id: string) => {
-    setSamples(prev => prev.filter(s => s.id !== id));
+  const deleteSample = async (id: string) => {
+    const { error } = await supabase
+      .from('samples')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      setSamples(prev => prev.filter(s => s.id !== id));
+    }
   };
 
-  const updateSample = (id: string, sample: Sample) => {
-    setSamples(prev => prev.map(s => s.id === id ? sample : s));
+  const updateSample = async (id: string, sample: Sample) => {
+    const { data, error } = await supabase
+      .from('samples')
+      .update(sample)
+      .eq('id', id)
+      .select();
+
+    if (!error && data) {
+      setSamples(prev => prev.map(s => s.id === id ? data[0] as Sample : s));
+    }
   };
 
   return (
