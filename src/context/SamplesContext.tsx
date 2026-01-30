@@ -1,33 +1,54 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Sample } from '../types';
 
-export const SamplesContext = createContext<any>(undefined);
+interface SamplesContextType {
+  samples: Sample[];
+  addSample: (sample: Sample) => void;
+  deleteSample: (id: string) => void;
+  updateSample: (id: string, sample: Sample) => void;
+}
+
+const SamplesContext = createContext<SamplesContextType | undefined>(undefined);
+
+const STORAGE_KEY = 'lab_samples_data';
 
 export function SamplesProvider({ children }: { children: ReactNode }) {
-  const [samples, setSamples] = useState<any[]>(() => {
-    // أول ما الموقع يفتح، بيشوف هل فيه بيانات متسجلة على الجهاز ده ولا لا
-    const saved = localStorage.getItem('lab_samples');
-    return saved ? JSON.parse(saved) : [];
+  const [samples, setSamples] = useState<Sample[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
   });
 
-  // كل ما عينة تزيد أو تنقص، بيحدث النسخة اللي متسيفة على الجهاز
   useEffect(() => {
-    localStorage.setItem('lab_samples', JSON.stringify(samples));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
   }, [samples]);
 
-  const addSample = (sample: any) => {
-    const newSample = { ...sample, id: Date.now().toString() };
-    setSamples(prev => [newSample, ...prev]);
+  const addSample = (sample: Sample) => {
+    setSamples(prev => [...prev, sample]);
   };
 
   const deleteSample = (id: string) => {
     setSamples(prev => prev.filter(s => s.id !== id));
   };
 
+  const updateSample = (id: string, sample: Sample) => {
+    setSamples(prev => prev.map(s => s.id === id ? sample : s));
+  };
+
   return (
-    <SamplesContext.Provider value={{ samples, addSample, deleteSample }}>
+    <SamplesContext.Provider value={{ samples, addSample, deleteSample, updateSample }}>
       {children}
     </SamplesContext.Provider>
   );
 }
 
-export const useSamples = () => useContext(SamplesContext);
+export function useSamples() {
+  const context = useContext(SamplesContext);
+  if (!context) {
+    throw new Error('useSamples must be used within a SamplesProvider');
+  }
+  return context;
+}
