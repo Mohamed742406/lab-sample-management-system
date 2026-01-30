@@ -41,7 +41,7 @@ export function SamplesProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('samples')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('createdAt', { ascending: false }); // ✅ التعديل هنا!
 
       if (error) throw error;
       setSamples(data || []);
