@@ -1,7 +1,7 @@
 {
-  "name": "lab-samples-management-v3",
+  "name": "lab-system-final",
   "private": true,
-  "version": "1.0.1",
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
